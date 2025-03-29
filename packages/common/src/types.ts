@@ -12,10 +12,4 @@ export const SignInSchema = z.object({
 });
 
 export const CreateRoomSchema = z.object({
-    name: z.string().min(3).max(20)
-});
-
-
-
-export type CreateUser = z.infer<typeof CreateUserSchema>;
-export type SignIn = z.infer<typeof SignInSchema>;
+    slug: z.string().min(3).max(20)});
