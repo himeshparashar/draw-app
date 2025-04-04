@@ -2,26 +2,31 @@ import express from "express";
 import { JWT_SECRET } from "@repo/backend-common/config";
 import jwt from "jsonwebtoken";
 import { middleware } from "./middleware";
-import { CreateRoomSchema, CreateUserSchema, SignInSchema } from "@repo/common/types";
+import {
+  CreateRoomSchema,
+  CreateUserSchema,
+  SignInSchema,
+} from "@repo/common/types";
 import { prisma } from "@repo/db/client";
 
 const app = express();
 
 app.use(express.json());
 
-
 app.post("/signup", async (req, res) => {
   const parsedData = CreateUserSchema.safeParse(req.body);
   if (!parsedData.success) {
-    res.status(400).json({ message: "Invalid request body", error: parsedData.error });
+    res
+      .status(400)
+      .json({ message: "Invalid request body", error: parsedData.error });
     return;
   }
   try {
     const user = await prisma.user.create({
       data: {
         email: parsedData.data?.username,
-      password: parsedData.data.password,
-      name: parsedData.data.name,
+        password: parsedData.data.password,
+        name: parsedData.data.name,
       },
     });
     res.status(200).json({ message: "Signup successful", userId: user.id });
@@ -33,7 +38,9 @@ app.post("/signup", async (req, res) => {
 app.post("/signin", async (req, res) => {
   const parsedData = SignInSchema.safeParse(req.body);
   if (!parsedData.success) {
-    res.status(400).json({ message: "Invalid request body", error: parsedData.error });
+    res
+      .status(400)
+      .json({ message: "Invalid request body", error: parsedData.error });
     return;
   }
   const user = await prisma.user.findUnique({
@@ -53,7 +60,9 @@ app.post("/signin", async (req, res) => {
 app.post("/room", middleware, async (req, res) => {
   const parsedData = CreateRoomSchema.safeParse(req.body);
   if (!parsedData.success) {
-    res.status(400).json({ message: "Invalid request body", error: parsedData.error });
+    res
+      .status(400)
+      .json({ message: "Invalid request body", error: parsedData.error });
     return;
   }
   //@ts-ignore
@@ -66,13 +75,11 @@ app.post("/room", middleware, async (req, res) => {
       },
     });
     res.json({
-      roomId: room.id
-    })
+      roomId: room.id,
+    });
   } catch (error) {
     res.status(400).json({ message: "Room already exists" });
   }
-
-  
 });
 
 app.get("/chats/:roomId", async (req, res) => {
@@ -80,21 +87,37 @@ app.get("/chats/:roomId", async (req, res) => {
   try {
     const messages = await prisma.chat.findMany({
       where: {
-        roomId: roomId
+        roomId: roomId,
       },
       orderBy: {
-        createdAt: "asc"
+        createdAt: "asc",
       },
-      take: 50
-    })
+      take: 50,
+    });
     res.json({
-      messages: messages
-    })
+      messages: messages,
+    });
   } catch (error) {
     res.status(404).json({ message: "Room not found" });
   }
-})
+});
 
-app.listen(3001, () => {
+app.get("/room/:slug", async (req, res) => {
+  const slug = req.params.slug;
+  try {
+    const room = await prisma.room.findFirst({
+      where: {
+        slug: slug,
+      },
+    });
+    res.json({
+      room: room,
+    });
+  } catch (error) {
+    res.status(404).json({ message: "Room not found" });
+  }
+});
+
+app.listen(3003, () => {
   console.log("Server is running on port 3001");
 });
